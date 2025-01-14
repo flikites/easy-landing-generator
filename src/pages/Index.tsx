@@ -5,19 +5,28 @@ import { CodeInput } from "@/components/CodeInput";
 import { UrlInput } from "@/components/UrlInput";
 import { ResultCard } from "@/components/ResultCard";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type UploadMethod = "file" | "code" | "url";
+type ModelType = "gpt-4o" | "gpt-4o-mini";
 
 const Index = () => {
   const [activeMethod, setActiveMethod] = useState<UploadMethod>("file");
   const [cssCode, setCssCode] = useState("");
   const [url, setUrl] = useState("");
   const [generationResult, setGenerationResult] = useState<any>(null);
-  const [apiKey, setApiKey] = useState(""); // Temporary storage for API key
+  const [apiKey, setApiKey] = useState("");
+  const [selectedModel, setSelectedModel] = useState<ModelType>("gpt-4o");
   const { toast } = useToast();
 
   const processWithGPT = async (input: string, type: string) => {
-    console.log("Processing with GPT:", { input, type });
+    console.log("Processing with GPT:", { input, type, model: selectedModel });
     
     if (!apiKey) {
       toast({
@@ -36,15 +45,24 @@ const Index = () => {
           Authorization: `Bearer ${apiKey}`,
         },
         body: JSON.stringify({
-          model: "gpt-4",
+          model: selectedModel,
           messages: [
             {
               role: "system",
-              content: "You are a landing page generator that creates HTML/CSS code based on input provided.",
+              content: `You are a landing page generator specialized in creating modern, responsive HTML/CSS code. 
+                       Focus on conversion optimization, clear call-to-actions, and mobile-first design. 
+                       Include semantic HTML5 elements and follow accessibility best practices.`,
             },
             {
               role: "user",
-              content: `Generate a conversion-optimized landing page based on this ${type}: ${input}. Return only the HTML/CSS code.`,
+              content: `Generate a conversion-optimized landing page based on this ${type}: ${input}. 
+                       The page should include:
+                       - A compelling hero section
+                       - Clear value propositions
+                       - Call-to-action buttons
+                       - Responsive design for all screen sizes
+                       - Modern, clean aesthetics
+                       Return only the HTML/CSS code.`,
             },
           ],
           temperature: 0.7,
@@ -58,7 +76,6 @@ const Index = () => {
       const data = await response.json();
       console.log("GPT Response:", data);
 
-      // Save the generated code and update the UI
       setGenerationResult({
         timestamp: new Date().toLocaleString(),
         inputType: type,
@@ -131,18 +148,32 @@ const Index = () => {
           </p>
         </div>
 
-        {/* API Key Input */}
-        <div className="mb-4">
-          <input
-            type="password"
-            placeholder="Enter your OpenAI API key"
-            className="w-full p-2 border rounded"
-            value={apiKey}
-            onChange={(e) => setApiKey(e.target.value)}
-          />
-          <p className="text-sm text-gray-500 mt-1">
-            This is temporary storage. In production, use secure methods to handle API keys.
-          </p>
+        <div className="space-y-4">
+          <div className="flex flex-col space-y-2">
+            <label className="text-sm font-medium">Select Model</label>
+            <Select value={selectedModel} onValueChange={(value: ModelType) => setSelectedModel(value)}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select a model" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="gpt-4o">GPT-4 Optimized (Best quality)</SelectItem>
+                <SelectItem value="gpt-4o-mini">GPT-4 Mini (Faster)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="mb-4">
+            <input
+              type="password"
+              placeholder="Enter your OpenAI API key"
+              className="w-full p-2 border rounded"
+              value={apiKey}
+              onChange={(e) => setApiKey(e.target.value)}
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              This is temporary storage. In production, use secure methods to handle API keys.
+            </p>
+          </div>
         </div>
 
         <UploadToggle activeMethod={activeMethod} onMethodChange={setActiveMethod} />
