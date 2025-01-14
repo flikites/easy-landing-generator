@@ -12,6 +12,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 type UploadMethod = "file" | "code" | "url";
 type ModelType = "gpt-4o-mini" | "chatgpt-4o-latest" | "o1" | "o1-mini";
@@ -24,7 +35,19 @@ const Index = () => {
   const [generationResult, setGenerationResult] = useState<any>(null);
   const [apiKey, setApiKey] = useState("");
   const [selectedModel, setSelectedModel] = useState<ModelType>("chatgpt-4o-latest");
+  const [isInputComplete, setIsInputComplete] = useState(false);
+  const [variations, setVariations] = useState(1);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
+
+  const handleFileSelect = async (files: File[]) => {
+    setSelectedFiles(files);
+    setIsInputComplete(true);
+    toast({
+      title: "Files Selected",
+      description: `${files.length} file(s) selected and ready for processing.`,
+    });
+  };
 
   const processWithGPT = async (input: string, type: string, files?: File[]) => {
     console.log("Processing with GPT:", { input, type, model: selectedModel, filesCount: files?.length });
@@ -39,6 +62,19 @@ const Index = () => {
     }
 
     try {
+      setIsProcessing(true);
+      
+      // Convert files to base64
+      const filePromises = files ? files.map(file => 
+        new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(file);
+        })
+      ) : [];
+
+      const base64Files = await Promise.all(filePromises);
+
       // Prepare the messages array with the system message
       const messages = [
         {
@@ -46,59 +82,30 @@ const Index = () => {
           content: `You are a landing page generator specialized in creating modern, responsive HTML/CSS code. 
                    Focus on conversion optimization, clear call-to-actions, and mobile-first design. 
                    Include semantic HTML5 elements and follow accessibility best practices.`,
-        }
-      ];
-
-      // If there are files, convert them to base64 and add them to the message
-      if (files && files.length > 0) {
-        const userMessage: any = {
+        },
+        {
           role: "user",
           content: [
             { 
               type: "text", 
-              text: `Generate a conversion-optimized landing page based on these images and the following input: ${input}. 
-                    The page should include:
+              text: `Generate ${variations} unique landing page variation${variations > 1 ? 's' : ''} based on these images and the following input: ${input}. 
+                    Each page should include:
                     - A compelling hero section
                     - Clear value propositions
                     - Call-to-action buttons
                     - Responsive design for all screen sizes
                     - Modern, clean aesthetics
                     Return only the HTML/CSS code.`
-            }
-          ]
-        };
-
-        // Add image URLs to the content array
-        for (const file of files) {
-          const base64 = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.readAsDataURL(file);
-          });
-
-          userMessage.content.push({
-            type: "image_url",
-            image_url: {
-              url: base64
-            }
-          });
+            },
+            ...base64Files.map(file => ({
+              type: "image_url",
+              image_url: {
+                url: file
+              }
+            }))
+          ],
         }
-
-        messages.push(userMessage);
-      } else {
-        // If no files, just add the text message
-        messages.push({
-          role: "user",
-          content: `Generate a conversion-optimized landing page based on this ${type}: ${input}. 
-                   The page should include:
-                   - A compelling hero section
-                   - Clear value propositions
-                   - Call-to-action buttons
-                   - Responsive design for all screen sizes
-                   - Modern, clean aesthetics
-                   Return only the HTML/CSS code.`
-        });
-      }
+      ];
 
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
@@ -138,15 +145,9 @@ const Index = () => {
         description: error instanceof Error ? error.message : "An error occurred",
         variant: "destructive",
       });
+    } finally {
+      setIsProcessing(false);
     }
-  };
-
-  const handleFileSelect = async (files: File[]) => {
-    setSelectedFiles(files);
-    toast({
-      title: "Files Selected",
-      description: `${files.length} file(s) selected and ready for processing.`,
-    });
   };
 
   const handleGenerate = async () => {
@@ -188,47 +189,85 @@ const Index = () => {
           </p>
         </div>
 
-        <div className="space-y-4">
-          <div className="flex flex-col space-y-2">
-            <label className="text-sm font-medium">Select Model</label>
-            <Select value={selectedModel} onValueChange={(value: ModelType) => setSelectedModel(value)}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a model" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="chatgpt-4o-latest">GPT-4O Latest (Best quality)</SelectItem>
-                <SelectItem value="gpt-4o-mini">GPT-4O Mini (Faster)</SelectItem>
-                <SelectItem value="o1">O1 (Experimental)</SelectItem>
-                <SelectItem value="o1-mini">O1 Mini (Fast experimental)</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        {!isInputComplete ? (
+          <>
+            <div className="space-y-4">
+              <div className="flex flex-col space-y-2">
+                <label className="text-sm font-medium">Select Model</label>
+                <Select value={selectedModel} onValueChange={(value: ModelType) => setSelectedModel(value)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="chatgpt-4o-latest">GPT-4O Latest (Best quality)</SelectItem>
+                    <SelectItem value="gpt-4o-mini">GPT-4O Mini (Faster)</SelectItem>
+                    <SelectItem value="o1">O1 (Experimental)</SelectItem>
+                    <SelectItem value="o1-mini">O1 Mini (Fast experimental)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-          <div className="mb-4">
-            <input
-              type="password"
-              placeholder="Enter your OpenAI API key"
-              className="w-full p-2 border rounded"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-            />
-            <p className="text-sm text-gray-500 mt-1">
-              This is temporary storage. In production, use secure methods to handle API keys.
-            </p>
-          </div>
-        </div>
+              <div className="mb-4">
+                <input
+                  type="password"
+                  placeholder="Enter your OpenAI API key"
+                  className="w-full p-2 border rounded"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  This is temporary storage. In production, use secure methods to handle API keys.
+                </p>
+              </div>
+            </div>
 
-        <UploadToggle activeMethod={activeMethod} onMethodChange={setActiveMethod} />
+            <UploadToggle activeMethod={activeMethod} onMethodChange={setActiveMethod} />
 
-        <div className="transition-all duration-300">
-          {activeMethod === "file" && <FileUpload onFileSelect={handleFileSelect} />}
-          {activeMethod === "code" && (
-            <CodeInput value={cssCode} onChange={setCssCode} onGenerate={handleGenerate} />
-          )}
-          {activeMethod === "url" && (
-            <UrlInput value={url} onChange={setUrl} onGenerate={handleGenerate} />
-          )}
-        </div>
+            <div className="transition-all duration-300">
+              {activeMethod === "file" && <FileUpload onFileSelect={handleFileSelect} />}
+              {activeMethod === "code" && (
+                <CodeInput value={cssCode} onChange={setCssCode} onGenerate={handleGenerate} />
+              )}
+              {activeMethod === "url" && (
+                <UrlInput value={url} onChange={setUrl} onGenerate={handleGenerate} />
+              )}
+            </div>
+          </>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle>Generation Settings</CardTitle>
+              <CardDescription>Configure your landing page generation</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="variations">Number of Variations</Label>
+                <Input
+                  id="variations"
+                  type="number"
+                  min="1"
+                  max="5"
+                  value={variations}
+                  onChange={(e) => setVariations(parseInt(e.target.value) || 1)}
+                />
+              </div>
+              <Button 
+                onClick={handleGenerate} 
+                className="w-full"
+                disabled={isProcessing}
+              >
+                {isProcessing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  'Generate Landing Page'
+                )}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
 
         {generationResult && (
           <ResultCard
