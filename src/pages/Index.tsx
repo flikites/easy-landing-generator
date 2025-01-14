@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 
 type UploadMethod = "file" | "code" | "url";
-type ModelType = "gpt-4o" | "gpt-4o-mini";
+type ModelType = "gpt-4" | "gpt-4-turbo-preview" | "gpt-3.5-turbo";
 
 const Index = () => {
   const [activeMethod, setActiveMethod] = useState<UploadMethod>("file");
@@ -22,7 +22,7 @@ const Index = () => {
   const [url, setUrl] = useState("");
   const [generationResult, setGenerationResult] = useState<any>(null);
   const [apiKey, setApiKey] = useState("");
-  const [selectedModel, setSelectedModel] = useState<ModelType>("gpt-4o");
+  const [selectedModel, setSelectedModel] = useState<ModelType>("gpt-4");
   const { toast } = useToast();
 
   const processWithGPT = async (input: string, type: string) => {
@@ -156,8 +156,9 @@ const Index = () => {
                 <SelectValue placeholder="Select a model" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="gpt-4o">GPT-4 Optimized (Best quality)</SelectItem>
-                <SelectItem value="gpt-4o-mini">GPT-4 Mini (Faster)</SelectItem>
+                <SelectItem value="gpt-4">GPT-4 (Best quality)</SelectItem>
+                <SelectItem value="gpt-4-turbo-preview">GPT-4 Turbo (Faster)</SelectItem>
+                <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Fastest)</SelectItem>
               </SelectContent>
             </Select>
           </div>
