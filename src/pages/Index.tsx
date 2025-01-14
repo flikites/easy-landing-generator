@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 
 type UploadMethod = "file" | "code" | "url";
-type ModelType = "gpt-4" | "gpt-4-turbo-preview" | "gpt-3.5-turbo";
+type ModelType = "gpt-4o-mini" | "chatgpt-4o-latest" | "o1" | "o1-mini";
 
 const Index = () => {
   const [activeMethod, setActiveMethod] = useState<UploadMethod>("file");
@@ -22,7 +22,7 @@ const Index = () => {
   const [url, setUrl] = useState("");
   const [generationResult, setGenerationResult] = useState<any>(null);
   const [apiKey, setApiKey] = useState("");
-  const [selectedModel, setSelectedModel] = useState<ModelType>("gpt-4");
+  const [selectedModel, setSelectedModel] = useState<ModelType>("chatgpt-4o-latest");
   const { toast } = useToast();
 
   const processWithGPT = async (input: string, type: string) => {
@@ -156,9 +156,10 @@ const Index = () => {
                 <SelectValue placeholder="Select a model" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="gpt-4">GPT-4 (Best quality)</SelectItem>
-                <SelectItem value="gpt-4-turbo-preview">GPT-4 Turbo (Faster)</SelectItem>
-                <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Fastest)</SelectItem>
+                <SelectItem value="chatgpt-4o-latest">GPT-4O Latest (Best quality)</SelectItem>
+                <SelectItem value="gpt-4o-mini">GPT-4O Mini (Faster)</SelectItem>
+                <SelectItem value="o1">O1 (Experimental)</SelectItem>
+                <SelectItem value="o1-mini">O1 Mini (Fast experimental)</SelectItem>
               </SelectContent>
             </Select>
           </div>
