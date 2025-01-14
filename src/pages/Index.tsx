@@ -20,13 +20,14 @@ const Index = () => {
   const [activeMethod, setActiveMethod] = useState<UploadMethod>("file");
   const [cssCode, setCssCode] = useState("");
   const [url, setUrl] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [generationResult, setGenerationResult] = useState<any>(null);
   const [apiKey, setApiKey] = useState("");
   const [selectedModel, setSelectedModel] = useState<ModelType>("chatgpt-4o-latest");
   const { toast } = useToast();
 
-  const processWithGPT = async (input: string, type: string) => {
-    console.log("Processing with GPT:", { input, type, model: selectedModel });
+  const processWithGPT = async (input: string, type: string, files?: File[]) => {
+    console.log("Processing with GPT:", { input, type, model: selectedModel, filesCount: files?.length });
     
     if (!apiKey) {
       toast({
@@ -38,6 +39,67 @@ const Index = () => {
     }
 
     try {
+      // Prepare the messages array with the system message
+      const messages = [
+        {
+          role: "system",
+          content: `You are a landing page generator specialized in creating modern, responsive HTML/CSS code. 
+                   Focus on conversion optimization, clear call-to-actions, and mobile-first design. 
+                   Include semantic HTML5 elements and follow accessibility best practices.`,
+        }
+      ];
+
+      // If there are files, convert them to base64 and add them to the message
+      if (files && files.length > 0) {
+        const userMessage: any = {
+          role: "user",
+          content: [
+            { 
+              type: "text", 
+              text: `Generate a conversion-optimized landing page based on these images and the following input: ${input}. 
+                    The page should include:
+                    - A compelling hero section
+                    - Clear value propositions
+                    - Call-to-action buttons
+                    - Responsive design for all screen sizes
+                    - Modern, clean aesthetics
+                    Return only the HTML/CSS code.`
+            }
+          ]
+        };
+
+        // Add image URLs to the content array
+        for (const file of files) {
+          const base64 = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(file);
+          });
+
+          userMessage.content.push({
+            type: "image_url",
+            image_url: {
+              url: base64
+            }
+          });
+        }
+
+        messages.push(userMessage);
+      } else {
+        // If no files, just add the text message
+        messages.push({
+          role: "user",
+          content: `Generate a conversion-optimized landing page based on this ${type}: ${input}. 
+                   The page should include:
+                   - A compelling hero section
+                   - Clear value propositions
+                   - Call-to-action buttons
+                   - Responsive design for all screen sizes
+                   - Modern, clean aesthetics
+                   Return only the HTML/CSS code.`
+        });
+      }
+
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -46,25 +108,7 @@ const Index = () => {
         },
         body: JSON.stringify({
           model: selectedModel,
-          messages: [
-            {
-              role: "system",
-              content: `You are a landing page generator specialized in creating modern, responsive HTML/CSS code. 
-                       Focus on conversion optimization, clear call-to-actions, and mobile-first design. 
-                       Include semantic HTML5 elements and follow accessibility best practices.`,
-            },
-            {
-              role: "user",
-              content: `Generate a conversion-optimized landing page based on this ${type}: ${input}. 
-                       The page should include:
-                       - A compelling hero section
-                       - Clear value propositions
-                       - Call-to-action buttons
-                       - Responsive design for all screen sizes
-                       - Modern, clean aesthetics
-                       Return only the HTML/CSS code.`,
-            },
-          ],
+          messages,
           temperature: 0.7,
         }),
       });
@@ -97,22 +141,18 @@ const Index = () => {
     }
   };
 
-  const handleFileSelect = async (file: File) => {
+  const handleFileSelect = async (files: File[]) => {
+    setSelectedFiles(files);
     toast({
-      title: "Processing file",
-      description: "Your file is being processed...",
+      title: "Files Selected",
+      description: `${files.length} file(s) selected and ready for processing.`,
     });
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const content = e.target?.result as string;
-      await processWithGPT(content, "file");
-    };
-    reader.readAsText(file);
   };
 
   const handleGenerate = async () => {
-    if (activeMethod === "code" && cssCode) {
+    if (activeMethod === "file" && selectedFiles.length > 0) {
+      await processWithGPT("Process these images", "images", selectedFiles);
+    } else if (activeMethod === "code" && cssCode) {
       await processWithGPT(cssCode, "CSS code");
     } else if (activeMethod === "url" && url) {
       await processWithGPT(url, "URL");

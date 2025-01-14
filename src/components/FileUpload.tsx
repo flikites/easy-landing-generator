@@ -5,10 +5,11 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 interface FileUploadProps {
-  onFileSelect: (file: File) => void;
+  onFileSelect: (files: File[]) => void;
+  maxFiles?: number;
 }
 
-export const FileUpload = ({ onFileSelect }: FileUploadProps) => {
+export const FileUpload = ({ onFileSelect, maxFiles = 3 }: FileUploadProps) => {
   const [dragActive, setDragActive] = useState(false);
 
   const handleDrag = (e: React.DragEvent) => {
@@ -25,15 +26,17 @@ export const FileUpload = ({ onFileSelect }: FileUploadProps) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      onFileSelect(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files) {
+      const filesArray = Array.from(e.dataTransfer.files).slice(0, maxFiles);
+      onFileSelect(filesArray);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.preventDefault();
-    if (e.target.files && e.target.files[0]) {
-      onFileSelect(e.target.files[0]);
+    if (e.target.files) {
+      const filesArray = Array.from(e.target.files).slice(0, maxFiles);
+      onFileSelect(filesArray);
     }
   };
 
@@ -53,14 +56,16 @@ export const FileUpload = ({ onFileSelect }: FileUploadProps) => {
           htmlFor="file-upload"
           className="block text-lg font-medium cursor-pointer"
         >
-          Drop your file here or click to upload
+          Drop up to {maxFiles} files here or click to upload
         </Label>
         <Input
           id="file-upload"
           type="file"
           className="hidden"
           onChange={handleChange}
-          accept=".css,image/*"
+          accept="image/*"
+          multiple
+          max={maxFiles}
         />
       </div>
     </Card>
