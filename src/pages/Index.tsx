@@ -251,20 +251,30 @@ const Index = () => {
                   onChange={(e) => setVariations(parseInt(e.target.value) || 1)}
                 />
               </div>
-              <Button 
-                onClick={handleGenerate} 
-                className="w-full"
-                disabled={isProcessing}
-              >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  'Generate Landing Page'
-                )}
-              </Button>
+              <div className="flex flex-col space-y-4">
+                <Button 
+                  onClick={handleGenerate} 
+                  className="w-full"
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    'Generate Landing Page'
+                  )}
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => setIsInputComplete(false)}
+                  className="w-full"
+                  disabled={isProcessing}
+                >
+                  Back to Upload
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
