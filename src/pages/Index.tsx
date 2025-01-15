@@ -50,7 +50,7 @@ const Index = () => {
   };
 
   const processWithGPT = async (input: string, type: string, files?: File[]) => {
-    console.log("Processing with GPT:", { input, type, model: selectedModel, filesCount: files?.length });
+    console.log("Processing with GPT:", { input, type, model: selectedModel, filesCount: files?.length, variations });
     
     if (!apiKey) {
       toast({
@@ -81,21 +81,31 @@ const Index = () => {
           role: "system",
           content: `You are a landing page generator specialized in creating modern, responsive HTML/CSS code. 
                    Focus on conversion optimization, clear call-to-actions, and mobile-first design. 
-                   Include semantic HTML5 elements and follow accessibility best practices.`,
+                   Include semantic HTML5 elements and follow accessibility best practices.
+                   When generating multiple variations, ensure each design is unique and distinct from the others.
+                   Consider different layouts, color schemes, and component arrangements for each variation.`,
         },
         {
           role: "user",
           content: [
             { 
               type: "text", 
-              text: `Generate ${variations} unique landing page variation${variations > 1 ? 's' : ''} based on these images and the following input: ${input}. 
-                    Each page should include:
+              text: `Generate ${variations} unique and distinct landing page variation${variations > 1 ? 's' : ''} based on these images and the following input: ${input}. 
+                    Each page should be completely different from the others in terms of:
+                    - Layout structure and arrangement
+                    - Color schemes and visual hierarchy
+                    - Component styling and positioning
+                    - Hero section design
+                    - Overall visual approach
+                    
+                    Each page must include:
                     - A compelling hero section
                     - Clear value propositions
                     - Call-to-action buttons
                     - Responsive design for all screen sizes
                     - Modern, clean aesthetics
-                    Return only the HTML/CSS code.`
+                    
+                    Return the HTML/CSS code for each variation, clearly separated with <!-- VARIATION X --> comments.`
             },
             ...base64Files.map(file => ({
               type: "image_url",
@@ -116,7 +126,7 @@ const Index = () => {
         body: JSON.stringify({
           model: selectedModel,
           messages,
-          temperature: 0.7,
+          temperature: 0.9, // Increased temperature for more creative variations
         }),
       });
 
@@ -127,16 +137,21 @@ const Index = () => {
       const data = await response.json();
       console.log("GPT Response:", data);
 
+      // Split the response into variations if multiple were requested
+      const variations = data.choices[0].message.content.split('<!-- VARIATION');
+      const processedVariations = variations.filter(v => v.trim()).map(v => v.trim());
+
       setGenerationResult({
         timestamp: new Date().toLocaleString(),
         inputType: type,
         success: true,
-        code: data.choices[0].message.content,
+        code: processedVariations.join('\n\n'),
+        variations: processedVariations,
       });
 
       toast({
         title: "Generation Complete",
-        description: "Your landing page has been generated successfully!",
+        description: `Successfully generated ${processedVariations.length} unique landing page variation${processedVariations.length > 1 ? 's' : ''}!`,
       });
     } catch (error) {
       console.error("Error processing with GPT:", error);
