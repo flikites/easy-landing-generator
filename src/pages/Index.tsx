@@ -50,7 +50,8 @@ const Index = () => {
   };
 
   const processWithGPT = async (input: string, type: string, files?: File[]) => {
-    console.log("Processing with GPT:", { input, type, model: selectedModel, filesCount: files?.length, variations });
+    const currentVariations = variations; // Store the current value of variations
+    console.log("Processing with GPT:", { input, type, model: selectedModel, filesCount: files?.length, variations: currentVariations });
     
     if (!apiKey) {
       toast({
@@ -90,7 +91,7 @@ const Index = () => {
           content: [
             { 
               type: "text", 
-              text: `Generate ${variations} unique and distinct landing page variation${variations > 1 ? 's' : ''} based on these images and the following input: ${input}. 
+              text: `Generate ${currentVariations} unique and distinct landing page variation${currentVariations > 1 ? 's' : ''} based on these images and the following input: ${input}. 
                     Each page should be completely different from the others in terms of:
                     - Layout structure and arrangement
                     - Color schemes and visual hierarchy
@@ -126,7 +127,7 @@ const Index = () => {
         body: JSON.stringify({
           model: selectedModel,
           messages,
-          temperature: 0.9, // Increased temperature for more creative variations
+          temperature: 0.9,
         }),
       });
 
