@@ -24,7 +24,7 @@ export const UrlInput = ({ value, onChange, onGenerate }: UrlInputProps) => {
         className="w-full"
       />
       <Button onClick={onGenerate} className="w-full mt-4">
-        Generate Landing Page
+        Continue
       </Button>
     </Card>
   );
