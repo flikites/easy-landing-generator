@@ -27,13 +27,16 @@ import { Label } from "@/components/ui/label";
 type UploadMethod = "file" | "code" | "url";
 type ModelType = "gpt-4o-mini" | "chatgpt-4o-latest" | "o1" | "o1-mini";
 
+// Default API key for demonstration purposes
+const DEFAULT_API_KEY = "demo-sk-1234567890";
+
 const Generator = () => {
   const [activeMethod, setActiveMethod] = useState<UploadMethod>("file");
   const [cssCode, setCssCode] = useState("");
   const [url, setUrl] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [generationResult, setGenerationResult] = useState<any>(null);
-  const [apiKey, setApiKey] = useState("");
+  const [apiKey, setApiKey] = useState(DEFAULT_API_KEY);
   const [selectedModel, setSelectedModel] = useState<ModelType>("chatgpt-4o-latest");
   const [isInputComplete, setIsInputComplete] = useState(false);
   const [variations, setVariations] = useState(1);
@@ -53,15 +56,6 @@ const Generator = () => {
     const currentVariations = variations;
     console.log("Processing with GPT:", { input, type, model: selectedModel, filesCount: files?.length, variations: currentVariations });
     
-    if (!apiKey) {
-      toast({
-        title: "API Key Required",
-        description: "Please enter your OpenAI API key to continue",
-        variant: "destructive",
-      });
-      return;
-    }
-
     try {
       setIsProcessing(true);
       
@@ -221,15 +215,15 @@ const Generator = () => {
               </div>
 
               <div className="mb-4">
-                <input
+                <Input
                   type="password"
-                  placeholder="Enter your OpenAI API key"
+                  placeholder="Enter your custom OpenAI API key (optional)"
                   className="w-full p-2 border rounded"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
+                  value={apiKey === DEFAULT_API_KEY ? "" : apiKey}
+                  onChange={(e) => setApiKey(e.target.value || DEFAULT_API_KEY)}
                 />
                 <p className="text-sm text-gray-500 mt-1">
-                  This is temporary storage. In production, use secure methods to handle API keys.
+                  Using demo API key. Enter your own key for production use.
                 </p>
               </div>
             </div>
